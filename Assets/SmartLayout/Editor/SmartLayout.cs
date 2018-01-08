@@ -1,20 +1,4 @@
-﻿/*TODO:
- * On Start, Plugin Not Working
- * when layout is deleted, plugin shuts down.
- * Documentation : file in main folder
- * Hints and instructions on the editor window
- * Fix Ctrl+L to work with selection
- * big - 860 x 389 (live area 550 x 330)
- * 
- * 
- * 
- * 
- * Features :
- * layouts profiles : global, per project -> settings in a file.
- * Stats : Monitor activity + Show pie chart of focused windows
- * 
- */ 
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 using System; 
@@ -22,7 +6,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-[InitializeOnLoad]
 public class SmartLayout : EditorWindow
 {
 	static Dictionary<Type,List<string>> Components = new Dictionary<Type,List<string>>();
@@ -43,11 +26,7 @@ public class SmartLayout : EditorWindow
 		set {
 			
 			window = (SmartLayout)EditorWindow.GetWindow (typeof(SmartLayout));
-			#if UNITY_5
 			window.titleContent.text = "Smart Layout";
-			#else
-			window.title = "Smart Layout";
-			#endif
 			if (value)
 				window.ShowUtility ();
 			else
@@ -230,11 +209,8 @@ public class SmartLayout : EditorWindow
 		if (tyAddComponentWindow != null) {
 			if (dummyComponent == null) {
 				dummyComponent = new GameObject ();
-				dummyComponent.hideFlags = 
-					#if UNITY_5
-					HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild | 
-						#endif
-						HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable;
+				dummyComponent.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild | 
+                    HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable;
 			}
 			
 			MethodInfo showfunc = tyAddComponentWindow.GetMethod ("Show", BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] {
@@ -260,9 +236,21 @@ public class SmartLayout : EditorWindow
 		}
 		
 	}
-	
-	static string LayoutFolder = InternalEditorUtility.unityPreferencesFolder + "/Layouts/";
-	static List<string> layouts = new List<string> ();
+
+    static string _layoutFolder;
+    static string LayoutFolder
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_layoutFolder))
+            {
+                _layoutFolder = InternalEditorUtility.unityPreferencesFolder + "/Layouts/";
+            }
+            return _layoutFolder;
+        }
+    }
+
+    static List<string> layouts = new List<string> ();
 	static string[] layoutsCopy;
 	//static System.IO.FileSystemWatcher fsWatcher;
 	
@@ -321,7 +309,9 @@ public class SmartLayout : EditorWindow
 			}
 		}
 	}
-	static SmartLayout ()
+
+    [InitializeOnLoadMethod]
+    static void InitSmartLayout ()
 	{
 		ReloadLayouts ();
 		LoadPrefs ();
@@ -356,18 +346,18 @@ public class SmartLayout : EditorWindow
 		}
 		isVisible = false;
 	}
-	
+	 
 	void OnEnable ()
 	{
 		ReloadLayouts ();
 		isVisible = true;
-	}
+	} 
 	
 	void OnFocus ()
 	{
 		ReloadLayouts (); 
 	}
-	
+	 
 	static void LoadPrefs ()
 	{
 		_isEnabled = EditorPrefs.GetBool ("SmartLayoutEnabled", false);
@@ -572,7 +562,7 @@ public class SmartLayout : EditorWindow
 		static EditorPlayMode ()
 		{
 			
-			EditorApplication.playmodeStateChanged = OnUnityPlayModeChanged;
+			EditorApplication.playModeStateChanged += OnUnityPlayModeChanged;
 			
 		}
 		
@@ -599,9 +589,9 @@ public class SmartLayout : EditorWindow
 				PlayModeChanged (oldState, newState);
 		}
 		
-		private static void OnUnityPlayModeChanged ()
+		private static void OnUnityPlayModeChanged (PlayModeStateChange playModeStateChange)
 		{
-			var newState = GetPlayModeState;
+            var newState = GetPlayModeState;
 			// Fire PlayModeChanged event.
 			OnPlayModeChanged (_oldState, newState);
 			// Set current state.
